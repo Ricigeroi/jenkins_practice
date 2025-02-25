@@ -14,9 +14,22 @@ pipeline {
 
         stage('Test') {
             steps {
+                // Создаём virtualenv и устанавливаем зависимости
                 sh """
-                pip install -r app/requirements.txt
-                pytest /tests
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r app/requirements.txt
+                    pytest
+                """
+            }
+        }
+
+        stage('Docker Build & Run') {
+            steps {
+                sh """
+                    docker build -t my-flask-app ./app
+                    docker run -d -p 5000:5000 --name flask_app my-flask-app
                 """
             }
         }
