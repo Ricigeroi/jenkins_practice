@@ -28,7 +28,8 @@ pipeline {
         stage('Docker Build & Run') {
             steps {
                 sh """
-                    python3 app/app.py
+                    docker build -t my-flask-app ./app
+                    docker run -d -p 5000:5000 --name flask_app my-flask-app
                 """
             }
         }
