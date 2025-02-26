@@ -5,8 +5,12 @@ pipeline {
         VENV = "venv"
         // Ваш ID проекта в GCP
         GCP_PROJECT_ID = "diesel-aegis-403113"
-        // Имя файла с ключом в Jenkins Credentials
+        // ID файла с ключом, сохранённого в Jenkins Credentials
         GCP_SERVICE_ACCOUNT_CREDENTIALS = "gcp-key"
+        // Настройки для Artifact Registry
+        ARTIFACT_REGISTRY_LOCATION = "us-central1"
+        ARTIFACT_REGISTRY_REPO     = "flask-repo"
+        IMAGE_NAME                 = "flask-app"
     }
 
     stages {
@@ -32,17 +36,15 @@ pipeline {
             steps {
                 sh """
                     echo "Building Docker image..."
-                    docker build -t gcr.io/${GCP_PROJECT_ID}/flask-app:latest app/
+                    docker build -t ${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/
 
-                    echo "Pushing Docker image to GCR..."
-                    # Если необходимо, можно выполнить аутентификацию: gcloud auth configure-docker
-                    docker push gcr.io/${GCP_PROJECT_ID}/flask-app:latest
+                    echo "Pushing Docker image to Artifact Registry..."
+                    docker push ${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest
                 """
             }
         }
 
         stage('Deploy to GCP') {
-            // Запускаем только если предыдущие стадии не упали
             when {
                 expression {
                     return currentBuild.result == null || currentBuild.result == 'SUCCESS'
@@ -50,24 +52,25 @@ pipeline {
             }
             steps {
                 script {
-                    // Подключаемся к Credentials Jenkins, где лежит JSON-файл
-                    withCredentials([file(credentialsId: "${env.GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
+                    // Подключаемся к Jenkins Credentials и получаем путь к JSON-файлу с ключом
+                    withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
                         sh """
-                            # Переходим в директорию с Terraform-конфигурацией
                             cd terraform
 
-                            # Инициализация Terraform
+                            # Инициализируем Terraform
                             terraform init
 
-                            # Показываем план
+                            # Просмотр плана деплоя с передачей переменных:
                             terraform plan \
-                              -var="project_id=${env.GCP_PROJECT_ID}" \
-                              -var="gcp_credentials_file=\${GOOGLE_CREDENTIALS_FILE}"
+                              -var="project_id=${GCP_PROJECT_ID}" \
+                              -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
+                              -var="artifact_image=${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
 
-                            # Применяем план (автоматически подтверждаем)
+                            # Применяем план деплоя
                             terraform apply -auto-approve \
-                              -var="project_id=${env.GCP_PROJECT_ID}" \
-                              -var="gcp_credentials_file=\${GOOGLE_CREDENTIALS_FILE}"
+                              -var="project_id=${GCP_PROJECT_ID}" \
+                              -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
+                              -var="artifact_image=${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
                         """
                     }
                 }
