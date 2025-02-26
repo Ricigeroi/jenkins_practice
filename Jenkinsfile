@@ -4,6 +4,7 @@ pipeline {
     environment {
         VENV = "venv"
         GCP_PROJECT_ID = "diesel-aegis-403113"
+        // ID файла с ключом, сохранённого в Jenkins Credentials
         GCP_SERVICE_ACCOUNT_CREDENTIALS = "gcp-key"
         ARTIFACT_REGISTRY_LOCATION = "us-central1"
         ARTIFACT_REGISTRY_REPO     = "flask-repo"
@@ -16,6 +17,7 @@ pipeline {
                 git branch: 'main', url: 'https://github.com/Ricigeroi/jenkins_practice.git'
             }
         }
+
         stage('Test') {
             steps {
                 sh """
@@ -27,23 +29,22 @@ pipeline {
                 """
             }
         }
-        stage('Docker Build & Push with Kaniko') {
+
+        stage('Docker Build & Push via Cloud Build') {
             steps {
-                withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'KANIKO_CONFIG')]) {
-                    sh '''
-                        echo "Building Docker image with Kaniko..."
-                        docker run --rm \
-                          -v "$PWD":/workspace \
-                          -v ${KANIKO_CONFIG}:/kaniko/.docker/config.json:ro \
-                          gcr.io/kaniko-project/executor:latest \
-                          --dockerfile=/workspace/app/Dockerfile \
-                          --context=dir:///workspace/app \
-                          --destination=us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest \
-                          --verbosity=info
-                    '''
+                withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
+                    sh """
+                        echo "Activating service account..."
+                        gcloud auth activate-service-account --key-file=${GOOGLE_CREDENTIALS_FILE}
+                        gcloud config set project ${GCP_PROJECT_ID}
+
+                        echo "Submitting build to Cloud Build..."
+                        gcloud builds submit --tag us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/
+                    """
                 }
             }
         }
+
         stage('Deploy to GCP') {
             when {
                 expression {
@@ -51,21 +52,19 @@ pipeline {
                 }
             }
             steps {
-                script {
-                    withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
-                        sh """
-                            cd terraform
-                            terraform init
-                            terraform plan \
-                              -var="project_id=${GCP_PROJECT_ID}" \
-                              -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
-                              -var="artifact_image=us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
-                            terraform apply -auto-approve \
-                              -var="project_id=${GCP_PROJECT_ID}" \
-                              -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
-                              -var="artifact_image=us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
-                        """
-                    }
+                withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
+                    sh """
+                        cd terraform
+                        terraform init
+                        terraform plan \
+                          -var="project_id=${GCP_PROJECT_ID}" \
+                          -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
+                          -var="artifact_image=us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
+                        terraform apply -auto-approve \
+                          -var="project_id=${GCP_PROJECT_ID}" \
+                          -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
+                          -var="artifact_image=us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
+                    """
                 }
             }
         }
