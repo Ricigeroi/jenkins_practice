@@ -5,7 +5,7 @@ pipeline {
         VENV = "venv"
         GCP_PROJECT_ID = "diesel-aegis-403113"
         // ID файла с ключом, сохранённого в Jenkins Credentials
-        GCP_SERVICE_ACCOUNT_CREDENTIALS = "gcp-key"
+        GCP_SERVICE_ACCOUNT_CREDENTIALS = "gcp-key2"
         ARTIFACT_REGISTRY_LOCATION = "us-central1"
         ARTIFACT_REGISTRY_REPO     = "flask-repo"
         IMAGE_NAME                 = "flask-app"
