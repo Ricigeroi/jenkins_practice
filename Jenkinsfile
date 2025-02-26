@@ -32,15 +32,17 @@ pipeline {
 
         stage('Docker Build & Push via Cloud Build') {
             steps {
-                withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
-                    sh """
-                        echo "Activating service account..."
-                        gcloud auth activate-service-account --key-file=${GOOGLE_CREDENTIALS_FILE}
-                        gcloud config set project ${GCP_PROJECT_ID}
-
-                        echo "Submitting build to Cloud Build..."
-                        gcloud builds submit --tag us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/
-                    """
+                 withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
+                    sh '''
+                        echo "Submitting build to Cloud Build using google/cloud-sdk container..."
+                        docker run --rm \
+                          -v "$PWD":/workspace \
+                          -v ${GOOGLE_CREDENTIALS_FILE}:/tmp/key.json:ro \
+                          google/cloud-sdk:latest \
+                          /bin/sh -c "gcloud auth activate-service-account --key-file=/tmp/key.json && \
+                                      gcloud config set project ${GCP_PROJECT_ID} && \
+                                      gcloud builds submit --tag us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/"
+                    '''
                 }
             }
         }
