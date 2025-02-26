@@ -34,18 +34,16 @@ pipeline {
 
         stage('Docker Build & Push') {
             steps {
-                script {
-                    // Используем docker.image().inside() для запуска команд в контейнере
-                    docker.image('docker:latest').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
-                        sh """
-                            echo "Building Docker image..."
-                            docker build -t ${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/
-
-                            echo "Pushing Docker image to Artifact Registry..."
-                            docker push ${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest
-                        """
-                    }
-                }
+                sh '''
+                    echo "Building and pushing Docker image using a Docker container..."
+                    docker run --rm \
+                      -v /var/run/docker.sock:/var/run/docker.sock \
+                      -v "$PWD":/workspace \
+                      -w /workspace \
+                      docker:latest \
+                      sh -c "docker build -t us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/ && \
+                             docker push us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
+                '''
             }
         }
 
@@ -57,7 +55,7 @@ pipeline {
             }
             steps {
                 script {
-                    // Используем Jenkins Credentials для передачи ключа сервисного аккаунта
+                    // Используем Jenkins Credentials для передачи JSON-файла с ключом
                     withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
                         sh """
                             cd terraform
@@ -67,12 +65,12 @@ pipeline {
                             terraform plan \
                               -var="project_id=${GCP_PROJECT_ID}" \
                               -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
-                              -var="artifact_image=${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
+                              -var="artifact_image=us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
 
                             terraform apply -auto-approve \
                               -var="project_id=${GCP_PROJECT_ID}" \
                               -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
-                              -var="artifact_image=${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
+                              -var="artifact_image=us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
                         """
                     }
                 }
