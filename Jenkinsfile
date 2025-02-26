@@ -33,25 +33,21 @@ pipeline {
         }
 
         stage('Docker Build & Push') {
-            // Запускаем эту стадию в контейнере с Docker-клиентом
-            agent {
-                docker {
-                    image 'docker:latest'
-                    // Монтируем Docker-сокет хоста в контейнер
-                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+            steps {
+                script {
+                    // Используем docker.image().inside() для запуска команд в контейнере
+                    docker.image('docker:latest').inside('-v /var/run/docker.sock:/var/run/docker.sock') {
+                        sh """
+                            echo "Building Docker image..."
+                            docker build -t ${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/
+
+                            echo "Pushing Docker image to Artifact Registry..."
+                            docker push ${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest
+                        """
+                    }
                 }
             }
-            steps {
-                sh """
-                    echo "Building Docker image..."
-                    docker build -t us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/
-
-                    echo "Pushing Docker image to Artifact Registry..."
-                    docker push us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest
-                """
-            }
         }
-
 
         stage('Deploy to GCP') {
             when {
@@ -61,21 +57,18 @@ pipeline {
             }
             steps {
                 script {
-                    // Подключаемся к Jenkins Credentials и получаем путь к JSON-файлу с ключом
+                    // Используем Jenkins Credentials для передачи ключа сервисного аккаунта
                     withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
                         sh """
                             cd terraform
 
-                            # Инициализируем Terraform
                             terraform init
 
-                            # Просмотр плана деплоя с передачей переменных:
                             terraform plan \
                               -var="project_id=${GCP_PROJECT_ID}" \
                               -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
                               -var="artifact_image=${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest"
 
-                            # Применяем план деплоя
                             terraform apply -auto-approve \
                               -var="project_id=${GCP_PROJECT_ID}" \
                               -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}" \
