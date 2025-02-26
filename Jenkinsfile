@@ -33,16 +33,25 @@ pipeline {
         }
 
         stage('Docker Build & Push') {
+            // Запускаем эту стадию в контейнере с Docker-клиентом
+            agent {
+                docker {
+                    image 'docker:latest'
+                    // Монтируем Docker-сокет хоста в контейнер
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
             steps {
                 sh """
                     echo "Building Docker image..."
-                    docker build -t ${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/
+                    docker build -t us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest app/
 
                     echo "Pushing Docker image to Artifact Registry..."
-                    docker push ${ARTIFACT_REGISTRY_LOCATION}-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest
+                    docker push us-central1-docker.pkg.dev/${GCP_PROJECT_ID}/${ARTIFACT_REGISTRY_REPO}/${IMAGE_NAME}:latest
                 """
             }
         }
+
 
         stage('Deploy to GCP') {
             when {
