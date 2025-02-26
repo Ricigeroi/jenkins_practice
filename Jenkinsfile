@@ -5,7 +5,7 @@ pipeline {
         VENV = "venv"
         GCP_PROJECT_ID = "diesel-aegis-403113"
         // ID файла с ключом, сохранённого в Jenkins Credentials (типа Secret File)
-        GCP_SERVICE_ACCOUNT_CREDENTIALS = "gcp-key"
+        GCP_SERVICE_ACCOUNT_CREDENTIALS = "gcp-key2"
     }
 
     stages {
