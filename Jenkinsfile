@@ -36,7 +36,7 @@ pipeline {
             steps {
                 sh '''
                     echo "Building and pushing Docker image using a Docker container..."
-                    docker run --rm \
+                    docker run --rm --privileged \
                       -v /var/run/docker.sock:/var/run/docker.sock \
                       -v "$PWD":/workspace \
                       -w /workspace \
