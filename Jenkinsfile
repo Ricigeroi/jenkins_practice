@@ -30,12 +30,17 @@ pipeline {
         stage('Deploy to GCP') {
             steps {
                 withCredentials([file(credentialsId: "${GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
-                    sh """
+                    sh '''
                         cd terraform
-                        terraform init
-                        terraform plan -var="project_id=${GCP_PROJECT_ID}" -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}"
-                        terraform apply -auto-approve -var="project_id=${GCP_PROJECT_ID}" -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}"
-                    """
+                        echo "Initializing Terraform..."
+                        docker run --rm -v "$PWD/terraform":/workspace -w /workspace hashicorp/terraform:latest init -var="project_id=${GCP_PROJECT_ID}" -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}"
+
+                        echo "Planning Terraform changes..."
+                        docker run --rm -v "$PWD/terraform":/workspace -w /workspace hashicorp/terraform:latest plan -var="project_id=${GCP_PROJECT_ID}" -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}"
+
+                        echo "Applying Terraform configuration..."
+                        docker run --rm -v "$PWD/terraform":/workspace -w /workspace hashicorp/terraform:latest apply -auto-approve -var="project_id=${GCP_PROJECT_ID}" -var="gcp_credentials_file=${GOOGLE_CREDENTIALS_FILE}"
+                    '''
                 }
             }
         }
