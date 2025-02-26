@@ -30,14 +30,21 @@ resource "google_compute_instance" "myapp_instance" {
     access_config {}
   }
 
-  # При запуске ВМ выполняется этот скрипт, который устанавливает Docker и запускает контейнер из Artifact Registry.
   metadata_startup_script = <<-EOF
     #!/bin/bash
+    # Обновление пакетов и установка git, python3 и pip
     apt-get update -y
-    apt-get install -y docker.io
-    systemctl start docker
-    systemctl enable docker
-    # Запускаем контейнер, подтягивая образ из Artifact Registry
-    docker run -d -p 80:5000 ${var.artifact_image}
+    apt-get install -y git python3 python3-pip
+
+    # Клонируем репозиторий в /opt и переходим в директорию с приложением
+    cd /opt
+    git clone https://github.com/Ricigeroi/jenkins_practice.git
+    cd jenkins_practice/app
+
+    # Устанавливаем зависимости приложения
+    pip3 install -r requirements.txt
+
+    # Запускаем Flask-приложение в фоне и сохраняем лог
+    nohup python3 app.py > /var/log/app.log 2>&1 &
   EOF
 }
