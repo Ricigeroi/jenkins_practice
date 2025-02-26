@@ -1,76 +1,46 @@
-pipeline {
-    agent any
-
-    environment {
-        VENV = "venv"
-        // Ваш ID проекта в GCP
-        GCP_PROJECT_ID = "diesel-aegis-403113"
-        // Имя файла с ключом в Jenkins Credentials
-        GCP_SERVICE_ACCOUNT_CREDENTIALS = "gcp-key"
+terraform {
+  required_version = ">= 1.0.0"
+  required_providers {
+    google = {
+      source = "hashicorp/google"
+      version = "~> 4.0"
     }
+  }
+}
 
-    stages {
-        stage('Clone Repository') {
-            steps {
-                git branch: 'main', url: 'https://github.com/Ricigeroi/jenkins_practice.git'
-            }
-        }
+provider "google" {
+  # Файл с ключом сервисного аккаунта
+  credentials = file(var.gcp_credentials_file)
+  project     = var.project_id
+  region      = var.region
+  zone        = var.zone
+}
 
-        stage('Test') {
-            steps {
-                sh """
-                    python3 -m venv ${env.VENV}
-                    . ${env.VENV}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r app/requirements.txt
-                    pytest
-                """
-            }
-        }
+resource "google_compute_instance" "myapp_instance" {
+  name         = "myapp-instance"
+  machine_type = "e2-micro"
 
-        stage('Docker Build & Run') {
-            steps {
-                sh """
-                    python3 -m venv ${env.VENV}
-                    . ${env.VENV}/bin/activate
-                    pip install --upgrade pip
-                    pip install -r app/requirements.txt
-                    python3 app/app.py
-                """
-            }
-        }
-
-        stage('Deploy to GCP') {
-            // Запускаем только если предыдущие стадии не упали
-            when {
-                expression {
-                    return currentBuild.result == null || currentBuild.result == 'SUCCESS'
-                }
-            }
-            steps {
-                script {
-                    // Подключаемся к Credentials Jenkins, где лежит JSON-файл
-                    withCredentials([file(credentialsId: "${env.GCP_SERVICE_ACCOUNT_CREDENTIALS}", variable: 'GOOGLE_CREDENTIALS_FILE')]) {
-                        sh """
-                            # Переходим в директорию с Terraform-конфигурацией
-                            cd terraform
-
-                            # Инициализация Terraform
-                            terraform init
-
-                            # Показываем план
-                            terraform plan \
-                              -var="project_id=${env.GCP_PROJECT_ID}" \
-                              -var="gcp_credentials_file=\${GOOGLE_CREDENTIALS_FILE}"
-
-                            # Применяем план (автоматически подтверждаем)
-                            terraform apply -auto-approve \
-                              -var="project_id=${env.GCP_PROJECT_ID}" \
-                              -var="gcp_credentials_file=\${GOOGLE_CREDENTIALS_FILE}"
-                        """
-                    }
-                }
-            }
-        }
+  boot_disk {
+    initialize_params {
+      image = "debian-cloud/debian-11"
     }
+  }
+
+  network_interface {
+    network       = "default"
+    access_config {}
+  }
+
+  # Скрипт, который выполнится при первом запуске ВМ
+  metadata_startup_script = <<-EOF
+    #!/bin/bash
+    apt-get update -y
+    apt-get install -y docker.io
+    systemctl start docker
+    systemctl enable docker
+
+    # Пример: запуск вашего Docker-контейнера
+    # (Предварительно нужно указать правильный образ)
+    docker run -d -p 80:5000 flask-app
+  EOF
 }
