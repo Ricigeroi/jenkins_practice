@@ -14,7 +14,6 @@ pipeline {
 
         stage('Test') {
             steps {
-                // Создаём virtualenv и устанавливаем зависимости
                 sh """
                     python3 -m venv venv
                     . venv/bin/activate
@@ -28,10 +27,6 @@ pipeline {
         stage('Build & Run') {
             steps {
                 sh """
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r app/requirements.txt
                     python3 app/app.py
                 """
             }
