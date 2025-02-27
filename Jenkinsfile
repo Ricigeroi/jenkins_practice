@@ -27,6 +27,7 @@ pipeline {
         stage('Build & Run') {
             steps {
                 sh """
+                    . venv/bin/activate
                     python3 app/app.py
                 """
             }
