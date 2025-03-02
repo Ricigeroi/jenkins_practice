@@ -1,4 +1,6 @@
 # app.py
+import random
+
 from flask import Flask, jsonify, render_template
 from datetime import datetime
 
@@ -14,6 +16,10 @@ def create_app():
     @app.route('/health')
     def health():
         return jsonify(status="ok"), 200
+
+    @app.route('/test')
+    def test():
+        return jsonify(status="test ok", random_number=random.randint(0, 100)), 200
 
     return app
 
