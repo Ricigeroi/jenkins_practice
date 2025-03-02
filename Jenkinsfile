@@ -4,20 +4,21 @@ pipeline {
     environment {
         DOCKER_IMAGE = "flask-app"
         DOCKER_CONTAINER = "flask-app-container"
-        DOCKER_BIN = "/usr/bin/docker"  // Specify the full path to Docker
+        DOCKER_BIN = "/usr/bin/docker"
     }
 
     stages {
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/Ricigeroi/jenkins_practice.git'
+                sh "ls -la"  // Debugging step to check files in workspace
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh cd app
-                sh "${DOCKER_BIN} build -t ${DOCKER_IMAGE} ."
+                sh "ls -la app"  // Debugging step to ensure Dockerfile is present
+                sh "${DOCKER_BIN} build -t ${DOCKER_IMAGE} -f app/Dockerfile app/"
             }
         }
 
