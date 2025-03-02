@@ -19,7 +19,7 @@ def create_app():
 
     @app.route('/test')
     def test():
-        return jsonify(status="test ok", random_number=random.randint(0, 100)), 200
+        return jsonify(status="test ok", random_number=random.randint(0, 1000)), 200
 
     return app
 
