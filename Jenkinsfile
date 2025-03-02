@@ -11,14 +11,25 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git branch: 'main', url: 'https://github.com/Ricigeroi/jenkins_practice.git'
-                sh "ls -la"  // Debugging step to check files in workspace
+                sh "ls -la"  // Проверяем файлы в рабочей директории
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh "ls -la app"  // Debugging step to ensure Dockerfile is present
-                sh "${DOCKER_BIN} build -t ${DOCKER_IMAGE} -f app/Dockerfile app/"
+                sh "ls -la app"  // Проверяем, что `Dockerfile` на месте
+                sh "${DOCKER_BIN} build -t ${DOCKER_IMAGE} -f app/Dockerfile ."
+            }
+        }
+
+        stage('Run Tests') {
+            steps {
+                sh """
+                ${DOCKER_BIN} run --rm \
+                    -v "\$(pwd)/tests:/app/tests" \
+                    -w /app ${DOCKER_IMAGE} \
+                    pytest tests/test_app.py --disable-warnings
+                """
             }
         }
 

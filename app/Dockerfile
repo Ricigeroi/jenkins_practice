@@ -1,11 +1,13 @@
-FROM python:3.8
+FROM python:3.9
 
 WORKDIR /app
 
-COPY . /app
+COPY app /app
+COPY tests /app/tests
 
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --upgrade pip && pip install -r /app/requirements.txt pytest
 
 EXPOSE 5000
 
-CMD ["python", "app.py"]
+# Запускаем приложение
+CMD ["python", "/app/app.py"]
