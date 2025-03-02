@@ -20,20 +20,21 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 sh "ls -la app"  // Проверяем, что Dockerfile на месте
-                sh "${DOCKER_BIN} build -t ${DOCKER_IMAGE} -f app/Dockerfile ."
+                sh "docker build -t ${GAR_URL} -f app/Dockerfile ."
             }
         }
 
         stage('Run Tests') {
             steps {
                 sh """
-                ${DOCKER_BIN} run --rm \
+                docker run --rm \
                     -v "\$(pwd)/tests:/app/tests" \
-                    -w /app ${DOCKER_IMAGE} \
+                    -w /app ${GAR_URL} \
                     pytest tests/test_app.py --disable-warnings
                 """
             }
         }
+
 
         stage('Push to Google Artifact Registry') {
             steps {
