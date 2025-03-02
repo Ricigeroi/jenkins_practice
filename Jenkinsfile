@@ -1,8 +1,13 @@
 pipeline {
-    agent any
+    agent {
+        docker {
+            image 'python:3.9'  // Using Python image for Jenkins agent
+        }
+    }
 
     environment {
-        VENV = "venv"
+        DOCKER_IMAGE = "flask-app"
+        DOCKER_CONTAINER = "flask-app-container"
     }
 
     stages {
@@ -12,24 +17,33 @@ pipeline {
             }
         }
 
-        stage('Test') {
+        stage('Build Docker Image') {
             steps {
-                sh """
-                    python3 -m venv venv
-                    . venv/bin/activate
-                    pip install --upgrade pip
-                    pip install -r app/requirements.txt
-                    pytest
-                """
+                script {
+                    docker.build("${DOCKER_IMAGE}", ".")
+                }
             }
         }
 
-        stage('Build & Run') {
+        stage('Run Flask App') {
             steps {
-                sh """
-                    . venv/bin/activate
-                    python3 app/app.py
-                """
+                script {
+                    // Stop and remove the existing container if it exists
+                    sh "docker stop ${DOCKER_CONTAINER} || true && docker rm ${DOCKER_CONTAINER} || true"
+
+                    // Run the new container
+                    sh """
+                    docker run -d --name ${DOCKER_CONTAINER} -p 5000:5000 ${DOCKER_IMAGE}
+                    """
+                }
+            }
+        }
+
+        stage('Cleanup') {
+            steps {
+                script {
+                    sh "docker system prune -f"
+                }
             }
         }
     }
