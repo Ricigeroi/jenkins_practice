@@ -6,7 +6,7 @@ pipeline {
         REPO_NAME = 'jenkins-practice'
         IMAGE_NAME = 'flask-app'
         IMAGE_TAG = 'latest'
-        GAR_LOCATION = 'europe-north1'  // Или другой регион
+        GAR_LOCATION = 'europe-north1'
         GAR_URL = "${GAR_LOCATION}-docker.pkg.dev/${PROJECT_ID}/${REPO_NAME}/${IMAGE_NAME}:${IMAGE_TAG}"
     }
 
