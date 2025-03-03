@@ -32,7 +32,7 @@ sudo systemctl start docker
 sudo systemctl enable docker
 
 # Авторизуемся в GAR
-gcloud auth configure-docker ${var.region}-docker.pkg.dev
+gcloud auth configure-docker europe-north1-docker.pkg.dev
 
 # Загружаем и запускаем контейнер
 sudo docker pull ${var.image_name}
