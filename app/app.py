@@ -35,10 +35,22 @@ def create_app():
             "Ferrari", "Lamborghini", "Maserati", "Jaguar", "Land Rover", "Volvo", "Subaru", "Mazda", "Lexus",
             "Hyundai",
             "Kia", "Tesla", "Chrysler", "Dodge", "Jeep", "Cadillac", "Buick", "GMC", "Acura", "Infiniti",
-            "Mitsubishi", "Suzuki", "Alfa Romeo", "Fiat", "Peugeot", "Renault", "Citroën", "Opel", "Skoda", "Seat"
+            "Mitsubishi", "Suzuki", "Alfa Romeo", "Fiat", "Peugeot", "Renault", "Citroen", "Opel", "Skoda", "Seat"
         ]
 
         return jsonify(status="test ok", random_car_brand=car_brands[random.randint(0, len(car_brands) - 1)]), 200
+
+    @app.route('/test3')
+    def test3():
+        countries = [
+            "USA", "Canada", "Brazil", "Germany", "France", "Italy", "Spain", "Russia", "China", "Japan",
+            "South Korea", "Australia", "India", "Mexico", "Argentina", "South Africa", "Egypt", "Turkey", "Sweden",
+            "Norway",
+            "Netherlands", "Switzerland", "Portugal", "Greece", "Poland", "Ukraine", "Belgium", "Austria", "Denmark",
+            "Finland"
+        ]
+
+        return jsonify(status="test ok", random_country=countries[random.randint(0, len(countries) - 1)]), 200
 
 
     return app
