@@ -101,7 +101,7 @@ EOS
 sudo chmod +x /home/deploy.sh
 
 # Запускаем деплой при старте
-/home/deploy.sh
+sudo bash /home/deploy.sh
 EOF
 }
 
