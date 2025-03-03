@@ -52,6 +52,14 @@ def create_app():
 
         return jsonify(status="test ok", random_country=countries[random.randint(0, len(countries) - 1)]), 200
 
+    @app.route('/test4')
+    def test4():
+        colors = [
+            "Red", "Blue", "Green", "Yellow", "Purple", "Orange", "Pink", "Black", "White", "Gray",
+            "Cyan", "Magenta", "Lime", "Brown", "Beige", "Turquoise", "Maroon", "Olive", "Gold", "Silver"
+        ]
+
+        return jsonify(status="test ok", random_color=colors[random.randint(0, len(colors) - 1)]), 200
 
     return app
 
