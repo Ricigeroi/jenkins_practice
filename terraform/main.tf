@@ -28,7 +28,7 @@ resource "google_artifact_registry_repository_iam_member" "flask_vm_sa_pull" {
 
 resource "google_compute_instance" "vm_instance" {
   name         = "flask-app-vm"
-  machine_type = "e2-micro"
+  machine_type = "e2-medium"
   zone         = "${var.region}-b"
 
   boot_disk {
