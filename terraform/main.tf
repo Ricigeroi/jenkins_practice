@@ -22,6 +22,8 @@ resource "google_compute_instance" "vm_instance" {
     }
   }
 
+  tags = ["flask-server"]
+
   metadata_startup_script = <<EOF
 #!/bin/bash
 # Устанавливаем Docker
@@ -36,4 +38,17 @@ gcloud auth configure-docker ${var.region}-docker.pkg.dev
 sudo docker pull ${var.image_name}
 sudo docker run -d -p 5000:5000 ${var.image_name}
 EOF
+}
+
+resource "google_compute_firewall" "allow_flask" {
+  name    = "allow-flask-5000"
+  network = "default"
+
+  allow {
+    protocol = "tcp"
+    ports    = ["5000"]
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+  target_tags   = ["flask-server"]
 }
