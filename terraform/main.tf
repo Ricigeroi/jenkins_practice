@@ -5,7 +5,7 @@ provider "google" {
 }
 
 resource "google_compute_instance" "vm_instance" {
-  name         = "docker-vm"
+  name         = "flask-app-vm"
   machine_type = "e2-micro"
   zone         = "${var.region}-b"
 
@@ -34,6 +34,6 @@ gcloud auth configure-docker ${var.region}-docker.pkg.dev
 
 # Загружаем и запускаем контейнер
 sudo docker pull ${var.image_name}
-sudo docker run -d -p 80:80 ${var.image_name}
+sudo docker run -d -p 5000:5000 ${var.image_name}
 EOF
 }
