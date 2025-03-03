@@ -17,14 +17,14 @@ def create_app():
     def health():
         return jsonify(status="ok"), 200
 
-    # @app.route('/test')
-    # def test():
-    #     words = [
-    #         "cat", "dog", "worm", "fish", "bird", "mouse", "lion", "tiger", "snake", "frog",
-    #         "rabbit", "deer", "wolf", "bear", "fox", "goat", "sheep", "cow", "horse", "duck",
-    #         "eagle", "owl", "rat", "ant", "bee", "butterfly", "spider", "shark", "whale", "dolphin",
-    #         "penguin", "camel", "elephant", "giraffe", "monkey", "zebra", "crocodile", "hippo", "kangaroo", "bat"
-    #     ]
+    @app.route('/test')
+    def test():
+        words = [
+            "cat", "dog", "worm", "fish", "bird", "mouse", "lion", "tiger", "snake", "frog",
+            "rabbit", "deer", "wolf", "bear", "fox", "goat", "sheep", "cow", "horse", "duck",
+            "eagle", "owl", "rat", "ant", "bee", "butterfly", "spider", "shark", "whale", "dolphin",
+            "penguin", "camel", "elephant", "giraffe", "monkey", "zebra", "crocodile", "hippo", "kangaroo", "bat"
+        ]
 
         return jsonify(status="test ok", random_word=words[random.randint(0, len(words) - 1)]), 200
 
