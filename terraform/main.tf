@@ -6,8 +6,8 @@ provider "google" {
 
 # Создаем статический внешний IP-адрес
 resource "google_compute_address" "flask_vm_static_ip" {
-  name   = "flask-vm-static-ip"
-  region = var.region
+  name         = "flask-vm-static-ip"
+  region       = var.region
   network_tier = "STANDARD"
 }
 
@@ -63,18 +63,45 @@ resource "google_compute_instance" "vm_instance" {
 
   metadata_startup_script = <<EOF
 #!/bin/bash
-# Устанавливаем Docker
-sudo apt update && sudo apt install -y docker.io
-sudo systemctl start docker
-sudo systemctl enable docker
+set -e
+
+# Устанавливаем Docker (если его нет)
+if ! command -v docker &> /dev/null
+then
+    sudo apt update
+    sudo apt install -y docker.io
+    sudo systemctl start docker
+    sudo systemctl enable docker
+fi
 
 # Авторизуемся в Artifact Registry
 gcloud auth configure-docker europe-north1-docker.pkg.dev
 
-sudo docker stop $(docker ps -q)
+# Создаем deploy.sh
+cat << 'EOS' > /home/deploy.sh
+#!/bin/bash
+set -e
+
+echo "Stopping all running Docker containers..."
+sudo docker stop $(sudo docker ps -q) || true
+
+echo "Removing all Docker containers and images..."
 sudo docker system prune -a -f
+
+echo "Pulling the latest image..."
 sudo docker pull ${var.image_name}
-sudo docker run -d -p 5000:5000 ${var.image_name}
+
+echo "Running the new container..."
+sudo docker run -d -p 5000:5000 --restart always ${var.image_name}
+
+echo "Deployment complete!"
+EOS
+
+# Даем права на выполнение deploy.sh
+sudo chmod +x /home/deploy.sh
+
+# Запускаем деплой при старте
+/home/deploy.sh
 EOF
 }
 
