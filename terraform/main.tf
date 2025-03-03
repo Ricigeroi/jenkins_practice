@@ -63,6 +63,7 @@ sudo systemctl enable docker
 gcloud auth configure-docker europe-north1-docker.pkg.dev
 
 # Загружаем и запускаем контейнер
+sudo docker system prune -a -f
 sudo docker pull ${var.image_name}
 sudo docker run -d -p 5000:5000 ${var.image_name}
 EOF

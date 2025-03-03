@@ -19,11 +19,15 @@ def create_app():
 
     @app.route('/test')
     def test():
-        return jsonify(status="test ok", random_number=random.randint(0, 1000)), 200
+        words = [
+            "cat", "dog", "worm", "fish", "bird", "mouse", "lion", "tiger", "snake", "frog",
+            "rabbit", "deer", "wolf", "bear", "fox", "goat", "sheep", "cow", "horse", "duck",
+            "eagle", "owl", "rat", "ant", "bee", "butterfly", "spider", "shark", "whale", "dolphin",
+            "penguin", "camel", "elephant", "giraffe", "monkey", "zebra", "crocodile", "hippo", "kangaroo", "bat"
+        ]
 
-    @app.route('/another_test')
-    def another_test():
-        return jsonify(status="test 2 ok", random_number=random.randint(0, 89875545)), 200
+        return jsonify(status="test ok", random_word=words[random.randint(0, len(words))]), 200
+
 
     return app
 
