@@ -71,7 +71,7 @@ sudo systemctl enable docker
 # Авторизуемся в Artifact Registry
 gcloud auth configure-docker europe-north1-docker.pkg.dev
 
-# Загружаем и запускаем контейнер
+sudo docker stop $(docker ps -q)
 sudo docker system prune -a -f
 sudo docker pull ${var.image_name}
 sudo docker run -d -p 5000:5000 ${var.image_name}
