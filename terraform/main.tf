@@ -4,6 +4,12 @@ provider "google" {
   region      = var.region
 }
 
+# Создаем статический внешний IP-адрес
+resource "google_compute_address" "flask_vm_static_ip" {
+  name   = "flask-vm-static-ip"
+  region = var.region
+}
+
 # Создаем сервисный аккаунт для VM
 resource "google_service_account" "flask_vm_sa" {
   account_id   = "flask-vm-sa"
@@ -26,6 +32,7 @@ resource "google_artifact_registry_repository_iam_member" "flask_vm_sa_pull" {
   member     = "serviceAccount:${google_service_account.flask_vm_sa.email}"
 }
 
+# Создаем виртуальную машину с постоянным IP
 resource "google_compute_instance" "vm_instance" {
   name         = "flask-app-vm"
   machine_type = "e2-medium"
@@ -40,7 +47,8 @@ resource "google_compute_instance" "vm_instance" {
   network_interface {
     network = "default"
     access_config {
-      network_tier = "STANDARD" # Используем стандартный уровень сервиса сети
+      nat_ip       = google_compute_address.flask_vm_static_ip.address
+      network_tier = "STANDARD"
     }
   }
 

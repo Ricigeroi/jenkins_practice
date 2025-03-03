@@ -26,7 +26,19 @@ def create_app():
             "penguin", "camel", "elephant", "giraffe", "monkey", "zebra", "crocodile", "hippo", "kangaroo", "bat"
         ]
 
-        return jsonify(status="test ok", random_word=words[random.randint(0, len(words))]), 200
+        return jsonify(status="test ok", random_word=words[random.randint(0, len(words) - 1)]), 200
+
+    @app.route('/test2')
+    def test2():
+        car_brands = [
+            "Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "BMW", "Mercedes-Benz", "Audi", "Volkswagen", "Porsche",
+            "Ferrari", "Lamborghini", "Maserati", "Jaguar", "Land Rover", "Volvo", "Subaru", "Mazda", "Lexus",
+            "Hyundai",
+            "Kia", "Tesla", "Chrysler", "Dodge", "Jeep", "Cadillac", "Buick", "GMC", "Acura", "Infiniti",
+            "Mitsubishi", "Suzuki", "Alfa Romeo", "Fiat", "Peugeot", "Renault", "Citroën", "Opel", "Skoda", "Seat"
+        ]
+
+        return jsonify(status="test ok", random_car_brand=car_brands[random.randint(0, len(car_brands) - 1)]), 200
 
 
     return app
