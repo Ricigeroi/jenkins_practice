@@ -8,6 +8,7 @@ provider "google" {
 resource "google_compute_address" "flask_vm_static_ip" {
   name   = "flask-vm-static-ip"
   region = var.region
+  network_tier = "STANDARD"
 }
 
 # Создаем сервисный аккаунт для VM
